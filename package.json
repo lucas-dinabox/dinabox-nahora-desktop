@@ -1,0 +1,37 @@
+{
+  "name": "nahora",
+  "version": "1.0.0",
+  "description": "A descrição do meu aplicativo",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder"
+  },
+  "build": {
+    "appId": "My-app",
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "icon.ico"
+    },
+    "nsis": {
+      "oneClick": true,
+      "installerIcon": "icon.ico",
+      "uninstallerIcon": "icon.ico",
+      "uninstallDisplayName": "my-app-uninstaller",
+      "license": "license.md",
+      "allowToChangeInstallationDirectory": false
+    }
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^22.0.2",
+    "electron-builder": "^23.6.0"
+  },
+  "dependencies": {
+    "axios": "^1.2.6",
+    "electron-store": "^8.1.0"
+  }
+}

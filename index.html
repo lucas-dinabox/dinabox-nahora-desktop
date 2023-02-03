@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>nahora</title>
+
+</head>
+
+<body>
+    <webview id="webview"
+        src="https://testeonline.adiantibuilder.com.br/lucasaraujodossantosdev/ponto_producao/index.php?class=LoginForm"
+        style="position: absolute; left: 0px; right: 0px; top: 0px; bottom: 0px;">
+    </webview>
+
+    <script>
+        require("./renderer.js")
+        const { ipcRenderer } = require('electron');
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const browserView = document.getElementById('webview');
+
+            //redireciona para uma página
+            const loadPage = () => {
+                browserView.loadURL('https://testeonline.adiantibuilder.com.br/lucasaraujodossantosdev/ponto_producao/index.php?class=SetCheckinMVC&method=onShow');
+                browserView.removeEventListener('dom-ready', loadPage);
+            };
+
+            browserView.addEventListener('dom-ready', () => {
+                browserView.openDevTools();
+
+                /*
+                const setUserId = `
+                    window.tMessage = function(data) {
+                        if(data){
+                            console.log(data);
+                            localStorage.setItem('user_id', data.id);
+                            window.dispatchEvent(new Event("storage"));
+                            return data;
+                        } else{
+                            console.log("vazio");
+                        }
+                    };
+                `;
+                */
+                
+                const getUserId = `
+                    localStorage.getItem("token");
+                `
+
+                // browserView.executeJavaScript(setUserId, true)
+                //     .then(data => {
+                //         //console.log('Data user: ', data);
+                //     })
+                //     .catch(err => {
+                //         //console.log('Erro setUserId: ', err);
+                //     });
+
+                browserView.executeJavaScript(getUserId, true)
+                    .then(data => {
+                        console.log('ID Employee: ', data);
+                        // classe atual na url
+                        let url = browserView.getURL();
+                        var classValue = url.substring(url.indexOf("class=") + 6);
+                        ipcRenderer.send("getUser", { user: data, class: classValue });
+                    })
+                    .catch(err => {
+                        //console.log('Erro: ', err);
+                    });
+
+                browserView.executeJavaScript('console.log(document.documentElement.innerHTML);');
+                //browserView.executeJavaScript('document.getElementById("tbutton_btn_teste").style.display = "none";');
+                setTimeout(function () {
+                    browserView.executeJavaScript(`
+                    if(document.getElementById("tbutton_btn_teste")){
+                        document.getElementById("tbutton_btn_teste").style.display = "none";
+                        console.log('Escondeu!');
+                    }
+                    else{
+                        console.log('NOT FOUND ELEMENT');
+                    }
+                    `);
+                }, 1000);
+
+                // clear local storage click event last button
+                setTimeout(function () {
+                    browserView.executeJavaScript(`
+                    var buttons = document.querySelectorAll('.menu-elastic a');
+                    var lastButton = buttons[buttons.length-1];
+                    lastButton.addEventListener("click", function() {
+                        console.log("Último botão pressionado!");
+                        localStorage.clear();
+                    });
+                    `)
+
+                }, 1000);
+
+                // clear local storage click event last button
+                setTimeout(function () {
+                    browserView.executeJavaScript(`
+                    var link = document.querySelector("a[href='index.php?class=SetCheckinMVC&method=onShow']");
+                    link.addEventListener("click", function(event){
+                        console.log("Link foi clicado!");
+                        event.preventDefault();
+                        window.location.href = "https://testeonline.adiantibuilder.com.br/lucasaraujodossantosdev/ponto_producao/index.php?class=SetCheckinMVC&method=onShow";
+                    });
+                    `);
+                }, 1000);
+
+                
+                ipcRenderer.on('redirectToCheckin', (event, setCheckin) => {
+                    if (setCheckin) {
+                        //console.log('Regarregar pagina: ', setCheckin);
+                        loadPage();
+                        //browserView.executeJavaScript(`location.reload();`);
+                    }
+                });
+    
+                ipcRenderer.on('reload-page', (event, reload) => {
+                    if (reload) {
+                        //console.log('Regarregar pagina para exibir notificação: ', reload);
+                        //loadPage();
+                        //browserView.executeJavaScript(`location.reload();`);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+
+</html>
