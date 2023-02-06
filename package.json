@@ -32,6 +32,7 @@
   },
   "dependencies": {
     "axios": "^1.2.6",
+    "electron-browser-storage": "^1.0.7",
     "electron-store": "^8.1.0"
   }
 }

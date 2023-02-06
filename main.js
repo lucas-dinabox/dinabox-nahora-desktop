@@ -2,11 +2,11 @@
 const { app, BrowserWindow, ipcMain, Notification, webContents, session, Tray, Menu } = require('electron')
 const axios = require('axios');
 const path = require('path');
-const Store = require('electron-store');
+const { localStorage, sessionStorage } = require('electron-browser-storage');
 
-let tray;
+
 let mainWindow;
-let store = new Store();
+let tray;
 
 function createWindow() {
     // Create the browser window.
@@ -73,14 +73,7 @@ app.on('ready', () => {
     });
 });
 
-
-// store.set(1 + '/' + 'checkin', false);
-// store.set(2 + '/' + 'checkin', false);
-// store.set(1 + '/' + 'checkout', false);
-// store.set(2 + '/' + 'checkout', false);
-
 ipcMain.on('getUser', (event, data) => {
-
     function notification(title, body) {
         if (!Notification.isSupported()) return;
 
@@ -98,11 +91,11 @@ ipcMain.on('getUser', (event, data) => {
             mainWindow.show();
             event.sender.send("redirectToCheckin", true);
         });
-        
+
         return notification;
     }
 
-    
+
     function getShifts(id) {
         let token = "Bearer " + id;
         let config = {
@@ -121,17 +114,15 @@ ipcMain.on('getUser', (event, data) => {
                 let checkinIsChecked = shifts.data.checkin.checkinIsChecked;
                 let checkoutIsChecked = shifts.data.checkout.checkoutIsChecked;
                 checkinIsChecked.forEach((checkin, index) => {
-                    //console.log('Checkin Data: ' + index , checkin);
                     innerData[index]['checkin_is_checked'] = checkin[Object.keys(checkin)[0]];
                 })
                 checkoutIsChecked.forEach((checkout, index) => {
-                    //console.log('Checkin Data: ' + index , checkin);
                     innerData[index]['checkout_is_checked'] = checkout[Object.keys(checkout)[0]];
                 })
                 event.sender.send("shiftData", innerData);
                 innerData.forEach(shift => {
                     if (shift) {
-                        
+
                         let startTimeCheckin = Date.parse(`${new Date().toISOString().slice(0, 10)} ${shift.checkin}`); // horário para entrada
                         let startTimeCheckout = Date.parse(`${new Date().toISOString().slice(0, 10)} ${shift.checkout}`); // horário para entrada
                         let tolerance = shift.tolerance * 60 * 1000;
@@ -162,29 +153,12 @@ ipcMain.on('getUser', (event, data) => {
                                 }
                                 else {
                                     console.log("Faça seu checkin!");
-                                    // só exibir a notificação caso ele esteja dentro do intervalo de tempo entre o horario de começo até a saída
-                                    // if (data.class !== "SetCheckinMVC&method=onShow") {
-                                    //     notification('Faça checkin', "Turno " + shift.name + " " + shift.checkin).show();
-                                    // }
-                                    // else {
-                                    //     console.log('Resultado before: ', store.get(shift.id + '/' + 'checkin'));
-                                    //     if (store.get(shift.id + '/' + 'checkin') !== true) {
-                                    //         store.set(shift.id + '/' + 'checkin', true);
-                                    //         console.log('Resultado afther: ', store.get(2 + '/' + 'checkin'));
-                                    //         notification('Faça checkin', "Turno " + shift.name + " " + shift.checkin).show();
-                                    //     }
-                                    // }
-                                    // if (store.get(shift.id + '/' + 'checkin') !== true) {
-                                    //     store.set(shift.id + '/' + 'checkin', true);
-                                    //     console.log('Resultado afther: ', store.get(shift.id + '/' + 'checkin'));
-                                    //     notification('Faça checkin', "Turno " + shift.name + " " + shift.checkin).show();
-                                    // }
-                                    // console.log('Resultado afther: ', store.get(shift.id + '/' + 'checkin'));
-                                    // console.log(`Check in the ${shift.checkin} hours of the ${shift.name} shift`)
-                                    // if (data.class !== "SetCheckinMVC&method=onShow") {
-                                    //     notification('Faça checkin', "Turno " + shift.name + " " + shift.checkin).show();
-                                    // }
-                                    notification('Faça checkin', "Turno " + shift.name + " " + shift.checkin).show();
+                                    mainWindow.webContents.executeJavaScript(`window.localStorage.getItem('${shift.id},checkin')`).then((response) => {
+                                        console.log('resposta: ', response);
+                                        if (response == 'false') {
+                                            notification('Faça checkin', "Turno " + shift.name + " " + shift.checkin).on('click', () => { localStorage.setItem(shift.id + ',' + 'checkin', true); }).show();
+                                        }
+                                    });
                                 }
                             }
                         }
@@ -197,16 +171,14 @@ ipcMain.on('getUser', (event, data) => {
                             //console.log("Perdeu o checkout " + shift.checkout)
                         }
                         else if (currentTime > startTimeCheckout && currentTime <= (startTimeCheckout + tolerance)) {
-                            //event.sender.send("reload-page", true);
 
-                            // if (store.get(shift.id + '/' + 'checkout') !== true) {
-                            //     store.set(shift.id + '/' + 'checkout', true);
-                            //     console.log('Resultado afther: ', store.get(shift.id + '/' + 'checkin'));
-                            //     notification('Faça checkout', "Turno " + shift.name + " " + shift.checkout).show();
-                            // }
-
-                            notification('Faça checkout', "Turno " + shift.name + " " + shift.checkout).show();
-                            console.log(`Checkout in the ${shift.checkout} hours of the ${shift.name} shift`)
+                            console.log(`Checkout in the ${shift.checkout} hours of the ${shift.name} shift`);
+                            mainWindow.webContents.executeJavaScript(`window.localStorage.getItem('${shift.id},checkout')`).then((response) => {
+                                console.log('resposta: ', response);
+                                if (response == 'false') {
+                                    notification('Faça checkout', "Turno " + shift.name + " " + shift.checkout).on('click', () => { localStorage.setItem(shift.id + ',' + 'checkout', true); }).show();
+                                }
+                            });
                         }
                         else {
                             //console.log("Ainda não passou da hora do checkout " + shift.checkout)
@@ -216,11 +188,10 @@ ipcMain.on('getUser', (event, data) => {
 
             })
             .catch(error => {
-                //console.log(error);
+                alert(error);
             });
     }
     getShifts(data.user);
-    //console.log(data);
 });
 
 app.on('before-quit', () => {
