@@ -1,14 +1,14 @@
 {
   "name": "nahora",
   "version": "1.0.0",
-  "description": "A descrição do meu aplicativo",
+  "description": "Controle de ponto",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
     "build": "electron-builder"
   },
   "build": {
-    "appId": "My-app",
+    "appId": "nahora 1.0.0",
     "win": {
       "target": [
         "nsis"
@@ -16,12 +16,12 @@
       "icon": "icon.ico"
     },
     "nsis": {
-      "oneClick": true,
+      "oneClick": false,
       "installerIcon": "icon.ico",
       "uninstallerIcon": "icon.ico",
       "uninstallDisplayName": "my-app-uninstaller",
       "license": "license.md",
-      "allowToChangeInstallationDirectory": false
+      "allowToChangeInstallationDirectory": true
     }
   },
   "author": "",

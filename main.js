@@ -21,18 +21,19 @@ function createWindow() {
             contextIsolation: false,
             enableRemoteModule: true,
             webviewTag: true,
+            devTools: false,
         }
     })
 
     mainWindow.loadFile('index.html');
-    mainWindow.webContents.openDevTools();
+    //mainWindow.webContents.openDevTools();
 
     session.defaultSession.clearStorageData();
 }
 
 app.on('ready', () => {
     createWindow();
-    app.setAppUserModelId('com.example.myapp');
+    app.setAppUserModelId(' ');
     // Cria um ícone de bandeja para o aplicativo
     tray = new Tray(path.join(__dirname, 'clock.png'));
 
@@ -82,6 +83,7 @@ ipcMain.on('getUser', (event, data) => {
             body: body,
             icon: path.join(__dirname, 'clock.png'),
             timeoutType: 'never',
+            actions: [],
         });
 
         notification.on('click', () => {
@@ -104,7 +106,7 @@ ipcMain.on('getUser', (event, data) => {
             }
         };
 
-        const url = `https://testeonline.adiantibuilder.com.br/lucasaraujodossantosdev/ponto_producao/employee_search/user_id/`;
+        const url = `https://www.ead.dinabox.net/app/rest.php?class=GetEmployeeShifts&method=searchByUserId`;
 
         axios.get(url, config)
             .then(response => {
@@ -130,7 +132,8 @@ ipcMain.on('getUser', (event, data) => {
                         // Logica para o checkin 
                         if (currentTime > startTimeCheckin) {
                             if (shift.checkin_is_checked) {
-                                console.log(`Check in done`)
+                                console.log(`Check in done`);
+                                localStorage.setItem(shift.id + ',' + 'checkin', true);
                             }
                             else {
 
@@ -154,7 +157,6 @@ ipcMain.on('getUser', (event, data) => {
                                 else {
                                     console.log("Faça seu checkin!");
                                     mainWindow.webContents.executeJavaScript(`window.localStorage.getItem('${shift.id},checkin')`).then((response) => {
-                                        console.log('resposta: ', response);
                                         if (response == 'false') {
                                             notification('Faça checkin', "Turno " + shift.name + " " + shift.checkin).on('click', () => { localStorage.setItem(shift.id + ',' + 'checkin', true); }).show();
                                         }
@@ -167,28 +169,33 @@ ipcMain.on('getUser', (event, data) => {
                         }
 
                         // Logica para o checkout
-                        if (currentTime > (startTimeCheckout + tolerance)) {
-                            //console.log("Perdeu o checkout " + shift.checkout)
+                        if(shift.checkout_is_checked){
+                            console.log(`Checkout in done`);
+                            localStorage.setItem(shift.id + ',' + 'checkout', true);
                         }
-                        else if (currentTime > startTimeCheckout && currentTime <= (startTimeCheckout + tolerance)) {
-
-                            console.log(`Checkout in the ${shift.checkout} hours of the ${shift.name} shift`);
-                            mainWindow.webContents.executeJavaScript(`window.localStorage.getItem('${shift.id},checkout')`).then((response) => {
-                                console.log('resposta: ', response);
-                                if (response == 'false') {
-                                    notification('Faça checkout', "Turno " + shift.name + " " + shift.checkout).on('click', () => { localStorage.setItem(shift.id + ',' + 'checkout', true); }).show();
-                                }
-                            });
-                        }
-                        else {
-                            //console.log("Ainda não passou da hora do checkout " + shift.checkout)
+                        else{
+                            if (currentTime > (startTimeCheckout + tolerance)) {
+                                //console.log("Perdeu o checkout " + shift.checkout)
+                            }
+                            else if (currentTime > startTimeCheckout && currentTime <= (startTimeCheckout + tolerance)) {
+    
+                                console.log(`Checkout in the ${shift.checkout} hours of the ${shift.name} shift`);
+                                mainWindow.webContents.executeJavaScript(`window.localStorage.getItem('${shift.id},checkout')`).then((response) => {
+                                    if (response == 'false') {
+                                        notification('Faça checkout', "Turno " + shift.name + " " + shift.checkout).on('click', () => { localStorage.setItem(shift.id + ',' + 'checkout', true); }).show();
+                                    }
+                                });
+                            }
+                            else {
+                                console.log(`Next checkout at ${shift.checkout} hours with ${shift.tolerance} minutes tolerance`);
+                            }
                         }
                     }
                 });
 
             })
             .catch(error => {
-                alert(error);
+                //console.log('erro requisição: ', error);
             });
     }
     getShifts(data.user);

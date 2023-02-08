@@ -5,13 +5,13 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>nahora</title>
+    <title>NaHora</title>
 
 </head>
 
 <body>
     <webview id="webview"
-        src="https://testeonline.adiantibuilder.com.br/lucasaraujodossantosdev/ponto_producao/index.php?class=LoginForm"
+        src="https://www.ead.dinabox.net/app/index.php?class=LoginForm"
         style="position: absolute; left: 0px; right: 0px; top: 0px; bottom: 0px;">
     </webview>
 
@@ -24,12 +24,12 @@
 
             //redireciona para uma página
             const loadPage = () => {
-                browserView.loadURL('https://testeonline.adiantibuilder.com.br/lucasaraujodossantosdev/ponto_producao/index.php?class=SetCheckinMVC&method=onShow');
+                browserView.loadURL('https://www.ead.dinabox.net/app/index.php?class=SetCheckinMVC&method=onShow');
                 browserView.removeEventListener('dom-ready', loadPage);
             };
 
             browserView.addEventListener('dom-ready', () => {
-                browserView.openDevTools();
+                //browserView.openDevTools();
 
                 const getToken = `
                     localStorage.getItem("token");
@@ -55,7 +55,6 @@
                         localStorage.clear();
                     });
                     `)
-
                 }, 1000);
 
                 ipcRenderer.on('redirectToCheckin', (event, setCheckin) => {
